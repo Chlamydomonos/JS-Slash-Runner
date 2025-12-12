@@ -13,6 +13,15 @@ export interface MacroLikeContext {
   role?: 'user' | 'assistant' | 'system';
 }
 
+// 为何ChatMessage这一type不是export的？这里无法使用
+const isSteadyMessage = (message: any) => {
+  if (!Array.isArray(message.swipes)) {
+    return true;
+  }
+
+  return message.swipe_id < message.swipes.length;
+};
+
 export const macros: MacroLike[] = [
   {
     regex: /\{\{get_(message|chat|character|preset|global)_variable::(.*?)\}\}/gi,
@@ -28,7 +37,8 @@ export const macros: MacroLike[] = [
           : {
               type,
               message_id:
-                context.message_id ?? chat.findLastIndex(message => _.isObject(_.get(message, 'variables[0]'))),
+                context.message_id ??
+                chat.findLastIndex(message => isSteadyMessage(message) && _.isObject(_.get(message, 'variables[0]'))),
             },
       );
       const value = omitDeepBy(_.get(variables, _.unescape(path), null), (_, key) => key.startsWith('$'));
@@ -50,7 +60,8 @@ export const macros: MacroLike[] = [
           : {
               type,
               message_id:
-                context.message_id ?? chat.findLastIndex(message => _.isObject(_.get(message, 'variables[0]'))),
+                context.message_id ??
+                chat.findLastIndex(message => isSteadyMessage(message) && _.isObject(_.get(message, 'variables[0]'))),
             },
       );
       const value = omitDeepBy(_.get(variables, _.unescape(path), null), (_, key) => key.startsWith('$'));
